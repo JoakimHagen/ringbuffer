@@ -13,8 +13,8 @@ namespace RingBuffer
 
     T this[int index] { get; }
 
-    ReadOnlySpan<T> ReadSpan(int index, int maxLength);
+    ReadOnlySpan<T> ReadSpan(int maxLength, int index = 0);
 
-    int CopyTo(Span<T> target, int sourceIndex);
+    int CopyTo(Span<T> target, int sourceIndex = 0);
   }
 }
