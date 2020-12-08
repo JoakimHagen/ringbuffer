@@ -2,7 +2,7 @@ using RingBuffer;
 using System;
 using Xunit;
 
-namespace RingBufferTests
+namespace Tests
 {
   public class OverfillTests : ContentTests
   {

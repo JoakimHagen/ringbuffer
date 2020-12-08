@@ -2,7 +2,7 @@ using System;
 using Xunit;
 using RingBuffer;
 
-namespace RingBufferTests
+namespace Tests
 {
   public class IEnumerableTests
   {

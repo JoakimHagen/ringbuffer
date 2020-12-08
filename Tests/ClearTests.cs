@@ -1,6 +1,6 @@
 ﻿using RingBuffer;
 
-namespace RingBufferTests
+namespace Tests
 {
   public class ClearTests : EmptyTests
   {
