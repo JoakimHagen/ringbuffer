@@ -30,15 +30,28 @@ namespace RingBuffer
     /// </summary>
     public T this[int index]
     {
-      get => allocated[TranslateIndex(index)];
-      set => allocated[TranslateIndex(index)] = value;
+      get
+      {
+        if (index < -Count || index >= Count)
+          throw new IndexOutOfRangeException($"There are {Count} items in the buffer. Cannot use index {index}");
+        return allocated[TranslateIndex(index)];
+      }
+
+      set
+      {
+        if (index < -Count || index >= Count)
+          throw new IndexOutOfRangeException($"There are {Count} items in the buffer. Cannot use index {index}");
+        allocated[TranslateIndex(index)] = value;
+      }
     }
 
     public void Add(T item)
     {
       allocated[cursor] = item;
-      if (++cursor >= Capacity) cursor = 0;
-      if (Count < Capacity) Count++;
+      if (++cursor >= Capacity)
+        cursor = 0;
+      if (Count < Capacity)
+        Count++;
       TotalCount++;
     }
 
@@ -70,21 +83,7 @@ namespace RingBuffer
     /// </summary>
     public ReadOnlySpan<T> ReadSpan(int maxLength, int index = 0)
     {
-      if (index < 0)
-      {
-        index += cursor;
-      }
-      else
-      {
-        index += cursor - Count;
-      }
-
-      if (index < 0)
-      {
-        index += Capacity;
-      }
-
-      var readStart = index;
+      var readStart = TranslateIndex(index);
 
       maxLength = Math.Min(Math.Min(Count, Capacity - readStart), maxLength);
 
@@ -96,20 +95,29 @@ namespace RingBuffer
     /// </summary>
     public void DecrementCount(int amount)
     {
-      if (Count < amount) throw new InvalidOperationException("The amount is larger than the current Count");
+      if (Count < amount)
+        throw new InvalidOperationException("The amount is larger than the current Count");
+
       Count -= amount;
     }
 
     public int CopyTo(Span<T> target, int sourceIndex = 0)
     {
-      var span = ReadSpan(target.Length, sourceIndex);
-      span.CopyTo(target);
+      var length = Math.Min(Count, target.Length);
 
-      sourceIndex += span.Length;
-      var remaining = target.Length - span.Length;
+      var firstSegment = ReadSpan(length, sourceIndex);
+
+      firstSegment.CopyTo(target);
+      var progress = firstSegment.Length;
+
+      sourceIndex += progress;
+
+      var remaining = length - progress;
 
       if (remaining > 0 && sourceIndex < Count)
-        ReadSpan(remaining, sourceIndex).CopyTo(target.Slice(span.Length));
+      {
+        ReadSpan(remaining, sourceIndex).CopyTo(target.Slice(progress));
+      }
 
       return Math.Min(Count, target.Length);
     }
@@ -120,7 +128,7 @@ namespace RingBuffer
       var segmentLength = Capacity - cursor;
 
       if (segmentLength > 0)
-        source.CopyTo(allocated.AsSpan().Slice(cursor, segmentLength));
+        source.Slice(0, Math.Min(sourceLength, segmentLength)).CopyTo(allocated.AsSpan().Slice(cursor, segmentLength));
 
       if (segmentLength < sourceLength)
         source.Slice(segmentLength).CopyTo(allocated);
@@ -145,14 +153,20 @@ namespace RingBuffer
 
     private int TranslateIndex(int index)
     {
-      if (index < -Count || index >= Count)
-        throw new IndexOutOfRangeException($"There are {Count} items in the buffer. Cannot use index {index}");
-
-      else if (index < 0)
+      if (index < 0)
       {
         index += Count;
       }
-      return ((cursor - Count) % Capacity + index) % Capacity;
+      else
+      {
+        index += cursor - Count;
+      }
+
+      if (index < 0)
+      {
+        index += Capacity;
+      }
+      return index;
     }
 
     #region IEnumerable
@@ -181,7 +195,8 @@ namespace RingBuffer
       public bool MoveNext()
       {
         int index = countOffset - (int)(source.TotalCount - initTotalCount);
-        if (index == 0) return false;
+        if (index == 0)
+          return false;
 
         Current = source[index];
         countOffset++;
