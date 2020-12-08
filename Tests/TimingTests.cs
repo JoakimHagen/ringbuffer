@@ -1,6 +1,5 @@
-﻿using RingBuffer;
-using System;
-using Xunit;
+﻿using Xunit;
+using RingBuffer;
 
 namespace Tests
 {
@@ -12,7 +11,7 @@ namespace Tests
 
     protected RingBuffer<int> subject = new RingBuffer<int>(4);
 
-    protected object item = null;
+    protected int item = 41;
 
     public TimingTests()
     {
@@ -24,7 +23,7 @@ namespace Tests
     {
       for (var i = 0; i < 1_000_000; i++)
       {
-        subject.Add(41);
+        subject.Add(item);
       }
     }
 
@@ -40,19 +39,33 @@ namespace Tests
     [Fact]
     public void CopyTo()
     {
+      // add another few items to divide the buffer in two segments that will have to be copied separately
+      subject.Add(SAMPLE);
+
       for (var i = 0; i < 1_000_000; i++) {
         subject.CopyTo(targetArray);
       }
     }
 
     [Fact]
-    public void RandomAccess()
+    public void RandomAccessRead()
     {
       for (var i = 0; i < 1_000_000; i++)
       {
         for (var j = 0; j < subject.Count; j++)
         {
-          var item = subject[j];
+          item = subject[j];
+        }
+      }
+    }
+
+    [Fact]
+    public void RandomAccessWrite()
+    {
+      for (var i = 0; i < 1_000_000; i++)
+      {
+        for (var j = 0; j < subject.Count; j++)
+        {
           subject[j] = item;
         }
       }

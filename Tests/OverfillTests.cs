@@ -1,5 +1,3 @@
-using RingBuffer;
-using System;
 using Xunit;
 
 namespace Tests
@@ -21,6 +19,14 @@ namespace Tests
     {
       subject.Clear();
       subject.Add(42);
+    }
+
+    [Fact]
+    public void AddsMultipleItems()
+    {
+      subject.Clear();
+      subject.Add(new int[] { 41, 42, 43 });
+      subject.Add(bigArray);
     }
   }
 }
