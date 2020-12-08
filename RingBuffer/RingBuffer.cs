@@ -103,7 +103,10 @@ namespace RingBuffer
 
     public int CopyTo(Span<T> target, int sourceIndex = 0)
     {
-      var length = Math.Min(Count, target.Length);
+      if (sourceIndex < 0)
+        sourceIndex += Count;
+
+      var length = Math.Min(Count - sourceIndex, target.Length);
 
       var firstSegment = ReadSpan(length, sourceIndex);
 
@@ -119,7 +122,7 @@ namespace RingBuffer
         ReadSpan(remaining, sourceIndex).CopyTo(target.Slice(progress));
       }
 
-      return Math.Min(Count, target.Length);
+      return length;
     }
 
     private int AddSpan(ReadOnlySpan<T> source)
@@ -155,7 +158,7 @@ namespace RingBuffer
     {
       if (index < 0)
       {
-        index += Count;
+        index += cursor;
       }
       else
       {
